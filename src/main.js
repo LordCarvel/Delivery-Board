@@ -9,6 +9,7 @@ const setWorkspaceBtn = document.getElementById('setWorkspaceBtn');
 const exportBtn = document.getElementById('exportBtn');
 const importBtn = document.getElementById('importBtn');
 const importFile = document.getElementById('importFile');
+const syncStatusEl = document.getElementById('syncStatus');
 
 const modalOverlay = document.getElementById('modalOverlay');
 const modalTitle = document.getElementById('modalTitle');
@@ -349,6 +350,9 @@ function applyRemoteState(remote){
 }
 if (typeof Peer !== 'undefined' && window.DBSync) {
   window.DBSync.init(WORKSPACE_ID, getStateForSync, applyRemoteState);
+  if (syncStatusEl) {
+    window.DBSync.onStatus((s) => { syncStatusEl.textContent = `sync: ${s}`; });
+  }
 }
 
 // Workspace switch UI
