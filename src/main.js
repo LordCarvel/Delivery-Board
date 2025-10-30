@@ -4,6 +4,11 @@ const searchInput = document.getElementById('searchInput');
 
 const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 const clearAllBtn = document.getElementById('clearAllBtn');
+const workspaceInput = document.getElementById('workspaceInput');
+const setWorkspaceBtn = document.getElementById('setWorkspaceBtn');
+const exportBtn = document.getElementById('exportBtn');
+const importBtn = document.getElementById('importBtn');
+const importFile = document.getElementById('importFile');
 
 const modalOverlay = document.getElementById('modalOverlay');
 const modalTitle = document.getElementById('modalTitle');
@@ -36,6 +41,7 @@ function getWorkspaceId() {
 
 const WORKSPACE_ID = getWorkspaceId();
 localStorage.setItem('workspaceId', WORKSPACE_ID);
+if (workspaceInput) workspaceInput.value = WORKSPACE_ID;
 
 function loadData() {
   const stored = localStorage.getItem('motoboys');
@@ -343,4 +349,59 @@ function applyRemoteState(remote){
 }
 if (typeof Peer !== 'undefined' && window.DBSync) {
   window.DBSync.init(WORKSPACE_ID, getStateForSync, applyRemoteState);
+}
+
+// Workspace switch UI
+if (setWorkspaceBtn) {
+  setWorkspaceBtn.addEventListener('click', () => {
+    const ws = (workspaceInput?.value || '').trim() || 'default';
+    localStorage.setItem('workspaceId', ws);
+    const sp = new URLSearchParams(location.search);
+    sp.set('ws', ws);
+    location.search = sp.toString();
+  });
+}
+
+// Export/Import JSON
+if (exportBtn) {
+  exportBtn.addEventListener('click', () => {
+    const data = JSON.stringify(motoboys, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().replace(/[:T]/g,'-').split('.')[0];
+    a.href = url;
+    a.download = `deliveryboard-${WORKSPACE_ID}-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
+
+if (importBtn && importFile) {
+  importBtn.addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      if (!Array.isArray(json)) throw new Error('Invalid file format');
+      suppressBroadcast = true;
+      motoboys = json;
+      saveData();
+      renderMotoboys();
+      suppressBroadcast = false;
+      if (window.DBSync) {
+        currentTs = Date.now();
+        window.DBSync.broadcastUpdate(motoboys);
+      }
+      alert('Import concluído!');
+    } catch (err) {
+      alert('Falha ao importar JSON.');
+    } finally {
+      e.target.value = '';
+    }
+  });
 }
