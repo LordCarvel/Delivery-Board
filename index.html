@@ -25,6 +25,7 @@
       <div>
         <input id="workspaceInput" class="search-input" style="width:220px" placeholder="Workspace (ex: pizzaria-123)">
         <button id="setWorkspaceBtn" class="secondary-btn">Set Workspace</button>
+        <span id="syncStatus" style="font-family: 'IBM Plex Mono', 'Courier New', monospace; font-size:.85rem;color:#555">sync: idle</span>
         <button id="exportBtn" class="secondary-btn">Export JSON</button>
         <button id="importBtn" class="secondary-btn">Import JSON</button>
         <input id="importFile" type="file" accept="application/json" style="display:none">
@@ -91,8 +92,8 @@
 
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="src/sync.js"></script>
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-  <script src="src/sync.js"></script>
   <script src="src/main.js"></script>
 </body>
 </html>
+
+

@@ -3,6 +3,14 @@
 // Namespace: window.DBSync
 
 (function(){
+  const ICE = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' }
+  ];
+
   const STATE = {
     peer: null,
     isHost: false,
@@ -12,7 +20,12 @@
     lastTs: 0,
     getState: null,
     applyState: null,
+    statusCb: null,
   };
+
+  function status(s){
+    try { STATE.statusCb && STATE.statusCb(String(s)); } catch {}
+  }
 
   function safeParse(data){
     try { return JSON.parse(data); } catch { return null; }
@@ -54,11 +67,14 @@
 
   function initAsHost(){
     STATE.isHost = true;
+    status('host: ready');
     STATE.peer.on('connection', (conn) => {
       STATE.conns.push(conn);
+      status(`host: peers ${STATE.conns.length}`);
       conn.on('data', (data) => handleIncoming(safeParse(data), conn));
       conn.on('close', () => {
         STATE.conns = STATE.conns.filter(c => c !== conn);
+        status(`host: peers ${STATE.conns.length}`);
       });
       // envia estado inicial ao conectar
       if (STATE.getState) {
@@ -70,13 +86,15 @@
 
   function initAsClient(){
     STATE.isHost = false;
+    status('client: connecting');
     const conn = STATE.peer.connect(STATE.hostId, { reliable: true });
     STATE.hostConn = conn;
     conn.on('open', () => {
+      status('client: connected');
       send(conn, { type: 'request-state' });
     });
     conn.on('data', (data) => handleIncoming(safeParse(data), conn));
-    conn.on('close', () => { STATE.hostConn = null; });
+    conn.on('close', () => { STATE.hostConn = null; status('client: disconnected'); });
   }
 
   window.DBSync = {
@@ -86,7 +104,8 @@
       STATE.applyState = applyState;
 
       // Try host first (fixed id). If unavailable, become client with random id.
-      STATE.peer = new Peer(STATE.hostId, { host: '0.peerjs.com', port: 443, secure: true });
+      const opts = { host: '0.peerjs.com', port: 443, secure: true, config: { iceServers: ICE }, debug: 2 };
+      STATE.peer = new Peer(STATE.hostId, opts);
       STATE.peer.on('open', (id) => {
         if (id === STATE.hostId) {
           initAsHost();
@@ -96,12 +115,11 @@
         }
       });
       STATE.peer.on('error', (err) => {
-        // If the id is taken, become client
-        if (String(err?.type || err).includes('unavailable-id')) {
-          STATE.peer = new Peer(undefined, { host: '0.peerjs.com', port: 443, secure: true });
-          STATE.peer.on('open', () => initAsClient());
-          STATE.peer.on('error', () => {});
-        }
+        // If the id is taken OR any error hosting, become client
+        status(`host-error: ${err?.type || err}`);
+        STATE.peer = new Peer(undefined, opts);
+        STATE.peer.on('open', () => initAsClient());
+        STATE.peer.on('error', (e2) => status(`client-error: ${e2?.type || e2}`));
       });
     },
 
@@ -110,7 +128,8 @@
       STATE.lastTs = Math.max(STATE.lastTs, ts);
       const payload = { type: 'update', motoboys, ts: STATE.lastTs };
       broadcast(payload, null);
-    }
+    },
+
+    onStatus(cb){ STATE.statusCb = cb; }
   };
 })();
-
