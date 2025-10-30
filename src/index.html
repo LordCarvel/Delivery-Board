@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeliveryBoard</title>
+  <link rel="icon" href="public/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="public/favicon.png">
+  <meta name="theme-color" content="#FCFAFA">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1 class="project-title">DeliveryBoard</h1>
+  </header>
+
+  <main class="main-content">
+    <section class="controls">
+      <input id="searchInput" type="text" placeholder="Buscar Pedido..." class="search-input">
+      <div>
+        <button id="clearFiltersBtn" class="secondary-btn" style="display:none">Clear Filters</button>
+        <button id="addMotoboyBtn" class="primary-btn">+ Motoboy</button>
+        <button id="clearAllBtn" class="secondary-btn">🧹 Clear All</button>
+      </div>
+    </section>
+
+    <section id="motoboyContainer" class="motoboy-container"></section>
+
+    <template id="tpl-motoboy-card">
+      <div class="motoboy-card">
+        <div class="motoboy-header">
+          <span class="motoboy-name"></span>
+          <div style="display:flex;gap:0.3rem;">
+            <button class="add-leva-btn" type="button">+ Leva</button>
+            <button class="secondary-btn delete-motoboy-btn" type="button" title="Excluir motoboy">🗑️</button>
+          </div>
+        </div>
+        <div class="motoboy-body"></div>
+      </div>
+    </template>
+
+    <template id="tpl-leva-divider">
+      <div class="leva-divider">
+        <button class="secondary-btn delete-leva-btn" type="button" title="Excluir leva">🗑️</button>
+      </div>
+    </template>
+
+    <template id="tpl-pedido">
+      <div class="pedido"></div>
+    </template>
+  </main>
+
+  <footer class="footer">
+    <p>© <a href="https://github.com/LordCarvel" target="_blank">LordCarvel</a></p>
+  </footer>
+
+  <div id="modalOverlay" class="modal-overlay hidden">
+    <div class="modal" id="modal">
+      <h2 id="modalTitle"></h2>
+      <form id="modalForm"></form>
+      <div class="modal-actions">
+        <button type="button" id="cancelBtn" class="secondary-btn">Cancelar</button>
+        <button type="submit" id="saveBtn" class="primary-btn">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <template id="tpl-add-motoboy-fields">
+    <input type="text" id="motoboyName" placeholder="Nome do motoboy" required>
+  </template>
+
+  <template id="tpl-add-leva-fields">
+    <textarea id="pedidosInput" rows="4" placeholder="Pedidos por linha ou separados por vírgula — Enter confirma; Shift+Enter nova linha" required></textarea>
+  </template>
+
+  <template id="tpl-edit-pedido-fields">
+    <input type="text" id="pedidoNumber" required>
+    <label for="moveMotoboy">Mover para motoboy:</label>
+    <select id="moveMotoboy"></select>
+    <div class="modal-actions">
+      <button type="button" id="deletePedido" class="secondary-btn">Apagar</button>
+    </div>
+  </template>
+
+  <script src="main.js"></script>
+</body>
+</html>
