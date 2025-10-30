@@ -25,6 +25,17 @@ let currentPedidoIndex = null;
 let currentAction = null;
 
 let activeFilter = null;
+let suppressBroadcast = false;
+let currentTs = 0;
+
+function getWorkspaceId() {
+  const ws = new URLSearchParams(location.search).get('ws');
+  const stored = localStorage.getItem('workspaceId');
+  return ws || stored || 'default';
+}
+
+const WORKSPACE_ID = getWorkspaceId();
+localStorage.setItem('workspaceId', WORKSPACE_ID);
 
 function loadData() {
   const stored = localStorage.getItem('motoboys');
@@ -83,6 +94,10 @@ function renderMotoboys() {
         }
         saveData();
         renderMotoboys();
+        if (!suppressBroadcast && window.DBSync) {
+          currentTs = Date.now();
+          window.DBSync.broadcastUpdate(motoboys);
+        }
       }
     });
 
@@ -99,6 +114,10 @@ function renderMotoboys() {
           }
           saveData();
           renderMotoboys();
+          if (!suppressBroadcast && window.DBSync) {
+            currentTs = Date.now();
+            window.DBSync.broadcastUpdate(motoboys);
+          }
         }
       });
       bodyEl.appendChild(divider);
@@ -230,6 +249,10 @@ function handleSave() {
   activeFilter = null;
   toggleClearFilters(false);
   renderMotoboys();
+  if (!suppressBroadcast && window.DBSync) {
+    currentTs = Date.now();
+    window.DBSync.broadcastUpdate(motoboys);
+  }
 }
 
 function deletePedido() {
@@ -240,6 +263,10 @@ function deletePedido() {
   activeFilter = null;
   toggleClearFilters(false);
   renderMotoboys();
+  if (!suppressBroadcast && window.DBSync) {
+    currentTs = Date.now();
+    window.DBSync.broadcastUpdate(motoboys);
+  }
 }
 
 function toggleClearFilters(show) {
@@ -295,9 +322,25 @@ clearAllBtn.addEventListener('click', () => {
   toggleClearFilters(false);
   localStorage.clear();
   renderMotoboys();
+  if (!suppressBroadcast && window.DBSync) {
+    currentTs = Date.now();
+    window.DBSync.broadcastUpdate(motoboys);
+  }
   location.reload();
 });
 
 loadData();
 renderMotoboys();
 
+// Realtime sync init (PeerJS Cloud)
+function getStateForSync(){ return { motoboys, ts: currentTs || 0 }; }
+function applyRemoteState(remote){
+  suppressBroadcast = true;
+  motoboys = Array.isArray(remote) ? remote : [];
+  saveData();
+  renderMotoboys();
+  suppressBroadcast = false;
+}
+if (typeof Peer !== 'undefined' && window.DBSync) {
+  window.DBSync.init(WORKSPACE_ID, getStateForSync, applyRemoteState);
+}
